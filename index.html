@@ -266,8 +266,8 @@ function showScreen(name){
 
 async function loadSongs(){
   try{
-    const result = await window.storage.get(STORAGE_KEY, false);
-    songs = result ? JSON.parse(result.value) : [];
+    const raw = localStorage.getItem(STORAGE_KEY);
+    songs = raw ? JSON.parse(raw) : [];
   }catch(e){
     songs = [];
   }
@@ -275,7 +275,7 @@ async function loadSongs(){
 }
 async function saveSongs(){
   try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(songs), false);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(songs));
   }catch(e){
     console.error('storage error', e);
   }
@@ -438,7 +438,7 @@ function cleanLyrics(raw){
   for(const line of lines){
     if(isRecommendMarker(line)){ skipMode = true; continue; }
     if(skipMode){
-      if(isPureLink(line)) continue;
+      if(isPureLink(line) || line.trim() === '') continue;
       skipMode = false;
     }
     if(isBracketHeader(line)) continue;

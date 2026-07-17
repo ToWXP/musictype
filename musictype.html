@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>musictype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#0a0e1a;
+  --surface:#10162b;
+  --surface-2:#161d38;
+  --border:#232c4d;
+  --text-dim:#3d4870;
+  --text-primary:#dbe4ff;
+  --accent:#4f8cff;
+  --accent-dim:#2c4a8c;
+  --error:#ff5470;
+  --font-mono:'JetBrains Mono', monospace;
+  --font-sans:'Inter', sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text-primary);
+  font-family:var(--font-sans);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:48px 20px;
+}
+.wrap{ width:100%; max-width:920px; }
+
+/* header / signature bars */
+header{ display:flex; align-items:center; gap:14px; margin-bottom:56px; }
+.logo{ font-family:var(--font-mono); font-size:22px; font-weight:600; color:var(--text-primary); letter-spacing:-0.5px; }
+.logo span{ color:var(--accent); }
+.bars{ display:flex; align-items:flex-end; gap:3px; height:18px; }
+.bars i{ width:3px; background:var(--accent-dim); border-radius:2px; height:6px; transition:height .15s ease, background .15s ease; }
+.bars.active i{ background:var(--accent); animation:bounce 0.9s ease-in-out infinite; }
+.bars i:nth-child(1){ animation-delay:0s; }
+.bars i:nth-child(2){ animation-delay:.15s; }
+.bars i:nth-child(3){ animation-delay:.3s; }
+.bars i:nth-child(4){ animation-delay:.45s; }
+@keyframes bounce{ 0%,100%{ height:6px; } 50%{ height:18px; } }
+
+/* screens */
+.screen{ display:none; }
+.screen.visible{ display:block; }
+
+/* library */
+.lib-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.lib-header h1{ font-size:15px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+.btn{
+  font-family:var(--font-sans); font-size:13px; font-weight:600;
+  background:var(--accent); color:#0a0e1a; border:none; border-radius:8px;
+  padding:9px 16px; cursor:pointer; transition:opacity .15s ease;
+}
+.btn:hover{ opacity:.85; }
+.btn.ghost{ background:transparent; color:var(--text-dim); border:1px solid var(--border); }
+.btn.ghost:hover{ color:var(--text-primary); border-color:var(--accent-dim); opacity:1; }
+
+.song-list{ display:flex; flex-direction:column; gap:8px; }
+.song-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:16px 18px; display:flex; justify-content:space-between; align-items:center;
+  cursor:pointer; transition:border-color .15s ease, background .15s ease;
+}
+.song-card:hover{ border-color:var(--accent-dim); background:var(--surface-2); }
+.song-title{ font-weight:600; font-size:15px; }
+.song-artist{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+.song-meta{ font-family:var(--font-mono); font-size:12px; color:var(--text-dim); }
+.remove-btn{ background:none; border:none; color:var(--text-dim); font-size:16px; cursor:pointer; padding:4px 8px; }
+.remove-btn:hover{ color:var(--error); }
+
+.lib-controls{ display:flex; gap:10px; margin-bottom:16px; }
+.lib-controls input, .lib-controls select{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  color:var(--text-primary); font-family:var(--font-sans); font-size:13px; padding:9px 12px;
+}
+.lib-controls input{ flex:1; }
+.lib-controls input:focus, .lib-controls select:focus{ outline:none; border-color:var(--accent); }
+.song-best{ font-family:var(--font-mono); font-size:12px; color:var(--accent); }
+.edit-btn{ background:none; border:none; color:var(--text-dim); font-size:13px; cursor:pointer; padding:4px 8px; }
+.edit-btn:hover{ color:var(--text-primary); }
+
+.results-history{ margin:8px 0 32px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.results-history .hist-label{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+
+.empty{ color:var(--text-dim); font-size:14px; text-align:center; padding:60px 0; }
+
+/* add form */
+.field{ margin-bottom:18px; }
+.field label{ display:block; font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight:600; }
+.field input, .field textarea{
+  width:100%; background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  color:var(--text-primary); font-family:var(--font-sans); font-size:14px; padding:12px 14px;
+  resize:vertical;
+}
+.field textarea{ font-family:var(--font-mono); min-height:220px; line-height:1.6; }
+.field input:focus, .field textarea:focus{ outline:none; border-color:var(--accent); }
+.form-actions{ display:flex; gap:10px; margin-top:24px; }
+
+/* typing screen */
+.type-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+.type-title{ font-size:14px; color:var(--text-dim); }
+.type-title b{ color:var(--text-primary); }
+.stats-live{ display:flex; gap:20px; font-family:var(--font-mono); font-size:13px; color:var(--accent); }
+
+.type-viewport{ height:192px; overflow:hidden; }
+.type-box{
+  font-family:var(--font-mono); font-size:34px; line-height:64px; letter-spacing:0.3px;
+  padding:0 4px; user-select:none; cursor:text;
+  transition:transform .15s ease;
+}
+.word{ display:inline-block; white-space:nowrap; }
+.type-box .char{ color:var(--text-dim); }
+.type-box .char.correct{ color:var(--text-primary); }
+.type-box .char.incorrect{ color:var(--error); background:rgba(255,84,112,0.12); border-radius:2px; }
+.type-box .char.current{ border-left:3px solid var(--accent); animation:blink 1s step-end infinite; }
+@keyframes blink{ 0%, 100%{ border-color:var(--accent); } 50%{ border-color:transparent; } }
+
+.type-actions{ margin-top:28px; display:flex; gap:10px; }
+.hidden-input{ position:absolute; opacity:0; pointer-events:none; }
+
+/* results */
+.results{ text-align:center; padding:40px 0; }
+.results h2{ font-size:14px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:28px; }
+.result-grid{ display:flex; justify-content:center; gap:56px; margin-bottom:36px; }
+.result-item .val{ font-family:var(--font-mono); font-size:40px; font-weight:600; color:var(--accent); }
+.result-item .lbl{ font-size:12px; color:var(--text-dim); margin-top:4px; text-transform:uppercase; letter-spacing:1px; }
+.results .form-actions{ justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" id="logo-home" style="cursor:pointer;">music<span>type</span></div>
+    <div class="bars" id="bars"><i></i><i></i><i></i><i></i></div>
+  </header>
+
+  <!-- LIBRARY -->
+  <div class="screen visible" id="screen-library">
+    <div class="lib-header">
+      <h1>your songs</h1>
+      <button class="btn" id="btn-add">+ add song</button>
+    </div>
+    <div class="lib-controls">
+      <input type="text" id="lib-search" placeholder="search song or artist">
+      <select id="lib-sort">
+        <option value="recent">most recent</option>
+        <option value="title">title (a-z)</option>
+        <option value="best">best wpm</option>
+      </select>
+    </div>
+    <div class="song-list" id="song-list"></div>
+    <div class="empty" id="empty-msg" style="display:none;">no songs yet — add one to start typing</div>
+  </div>
+
+  <!-- ADD SONG -->
+  <div class="screen" id="screen-add">
+    <div class="lib-header">
+      <h1 id="add-heading">add song</h1>
+    </div>
+    <div class="field">
+      <label>title</label>
+      <input type="text" id="input-title" placeholder="song title">
+    </div>
+    <div class="field">
+      <label>artist (optional)</label>
+      <input type="text" id="input-artist" placeholder="artist name">
+    </div>
+    <div class="field">
+      <label>spotify link (optional)</label>
+      <input type="text" id="input-spotify" placeholder="https://open.spotify.com/track/...">
+      <div style="margin-top:8px;">
+        <a href="#" id="link-spotify-search" style="font-size:12px; color:var(--text-dim); text-decoration:none;">search song on spotify →</a>
+      </div>
+    </div>
+    <div class="field">
+      <label>lyrics</label>
+      <textarea id="input-lyrics" placeholder="paste the lyrics you want to practice typing"></textarea>
+      <div style="margin-top:8px; display:flex; gap:16px;">
+        <a href="#" id="link-genius" style="font-size:12px; color:var(--accent); text-decoration:none;">open on genius →</a>
+        <a href="#" id="link-search" style="font-size:12px; color:var(--text-dim); text-decoration:none;">search google →</a>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" id="btn-save">save song</button>
+      <button class="btn ghost" id="btn-cancel">cancel</button>
+    </div>
+  </div>
+
+  <!-- TYPING -->
+  <div class="screen" id="screen-type">
+    <div class="type-top">
+      <div class="type-title"><b id="type-song-title"></b> <span id="type-song-artist"></span></div>
+      <div class="stats-live">
+        <span id="live-wpm">0 wpm</span>
+        <span id="live-acc">100% acc</span>
+        <span id="live-time">0s</span>
+      </div>
+    </div>
+    <div id="spotify-embed" style="margin-bottom:8px; display:none;"></div>
+    <div id="spotify-login-hint" style="margin-bottom:20px; display:none;">
+      <a href="https://accounts.spotify.com/login?continue=https://open.spotify.com" target="_blank" style="font-size:12px; color:var(--text-dim); text-decoration:none;">log in to spotify for full playback →</a>
+    </div>
+    <div class="type-viewport" id="type-viewport">
+      <div class="type-box" id="type-box"></div>
+    </div>
+    <input type="text" class="hidden-input" id="hidden-input" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="type-actions">
+      <button class="btn ghost" id="btn-restart">restart</button>
+      <button class="btn ghost" id="btn-back">back to library</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="screen-results">
+    <div class="results">
+      <h2>finished</h2>
+      <div class="results-history" id="results-history" style="display:none;">
+        <div class="hist-label">correct wpm progress</div>
+        <div id="sparkline"></div>
+      </div>
+      <div class="result-grid">
+        <div class="result-item"><div class="val" id="res-wpm">0</div><div class="lbl">correct wpm</div></div>
+        <div class="result-item"><div class="val" id="res-raw">0</div><div class="lbl">wpm raw</div></div>
+        <div class="result-item"><div class="val" id="res-acc">0%</div><div class="lbl">accuracy</div></div>
+        <div class="result-item"><div class="val" id="res-time">0s</div><div class="lbl">time</div></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" id="btn-retry">retry</button>
+        <button class="btn ghost" id="btn-results-back">back to library</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'songs';
+let songs = [];
+let currentSong = null;
+let target = '';
+let startTime = null;
+let finished = false;
+let totalKeystrokes = 0;
+let errorKeystrokes = 0;
+let timerInterval = null;
+let editingId = null;
+let libSearch = '';
+let libSort = 'recent';
+
+const screens = {
+  library: document.getElementById('screen-library'),
+  add: document.getElementById('screen-add'),
+  type: document.getElementById('screen-type'),
+  results: document.getElementById('screen-results'),
+};
+function showScreen(name){
+  Object.values(screens).forEach(s => s.classList.remove('visible'));
+  screens[name].classList.add('visible');
+}
+
+async function loadSongs(){
+  try{
+    const result = await window.storage.get(STORAGE_KEY, false);
+    songs = result ? JSON.parse(result.value) : [];
+  }catch(e){
+    songs = [];
+  }
+  renderLibrary();
+}
+async function saveSongs(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(songs), false);
+  }catch(e){
+    console.error('storage error', e);
+  }
+}
+
+function bestWpm(song){
+  if(!song.history || song.history.length === 0) return null;
+  return Math.max(...song.history.map(h => h.wpm));
+}
+
+function getFilteredSongs(){
+  let list = songs.filter(s => {
+    const q = libSearch.toLowerCase();
+    return s.title.toLowerCase().includes(q) || (s.artist || '').toLowerCase().includes(q);
+  });
+  if(libSort === 'title'){
+    list = list.slice().sort((a,b) => a.title.localeCompare(b.title));
+  } else if(libSort === 'best'){
+    list = list.slice().sort((a,b) => (bestWpm(b) || 0) - (bestWpm(a) || 0));
+  } else {
+    list = list.slice().reverse();
+  }
+  return list;
+}
+
+function renderLibrary(){
+  const list = document.getElementById('song-list');
+  const empty = document.getElementById('empty-msg');
+  list.innerHTML = '';
+  const filtered = getFilteredSongs();
+  if(songs.length === 0){
+    empty.textContent = 'no songs yet — add one to start typing';
+    empty.style.display = 'block';
+    return;
+  }
+  if(filtered.length === 0){
+    empty.textContent = 'no songs found';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  filtered.forEach(song => {
+    const card = document.createElement('div');
+    card.className = 'song-card';
+    const words = song.lyrics.trim().split(/\s+/).length;
+    const best = bestWpm(song);
+    card.innerHTML = `
+      <div>
+        <div class="song-title">${escapeHtml(song.title)}</div>
+        <div class="song-artist">${escapeHtml(song.artist || '')}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        ${best !== null ? `<div class="song-best">${best} wpm</div>` : ''}
+        <div class="song-meta">${words} words</div>
+        <button class="edit-btn" data-id="${song.id}">edit</button>
+        <button class="remove-btn" data-id="${song.id}">✕</button>
+      </div>
+    `;
+    card.addEventListener('click', (e) => {
+      if(e.target.classList.contains('remove-btn') || e.target.classList.contains('edit-btn')) return;
+      startTyping(song);
+    });
+    card.querySelector('.edit-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEditForm(song);
+    });
+    card.querySelector('.remove-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      songs = songs.filter(s => s.id !== song.id);
+      await saveSongs();
+      renderLibrary();
+    });
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('lib-search').addEventListener('input', (e) => {
+  libSearch = e.target.value;
+  renderLibrary();
+});
+document.getElementById('lib-sort').addEventListener('change', (e) => {
+  libSort = e.target.value;
+  renderLibrary();
+});
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ---- ADD SONG ----
+document.getElementById('btn-add').addEventListener('click', () => {
+  editingId = null;
+  document.getElementById('add-heading').textContent = 'add song';
+  document.getElementById('input-title').value = '';
+  document.getElementById('input-artist').value = '';
+  document.getElementById('input-spotify').value = '';
+  document.getElementById('input-lyrics').value = '';
+  showScreen('add');
+});
+
+function openEditForm(song){
+  editingId = song.id;
+  document.getElementById('add-heading').textContent = 'edit song';
+  document.getElementById('input-title').value = song.title;
+  document.getElementById('input-artist').value = song.artist || '';
+  document.getElementById('input-spotify').value = song.spotify || '';
+  document.getElementById('input-lyrics').value = song.lyrics;
+  showScreen('add');
+}
+document.getElementById('btn-cancel').addEventListener('click', () => showScreen('library'));
+
+function slugify(str){
+  return str.trim().replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-');
+}
+function buildGeniusUrl(artist, title){
+  const artistSlug = slugify(artist);
+  const titleSlug = slugify(title).toLowerCase();
+  const parts = [artistSlug, titleSlug, 'lyrics'].filter(Boolean);
+  return `https://genius.com/${parts.join('-')}`;
+}
+
+document.getElementById('link-spotify-search').addEventListener('click', (e) => {
+  e.preventDefault();
+  const title = document.getElementById('input-title').value.trim();
+  const artist = document.getElementById('input-artist').value.trim();
+  const q = encodeURIComponent(`${artist} ${title}`.trim());
+  window.open(`https://open.spotify.com/search/${q}`, '_blank');
+});
+
+document.getElementById('link-genius').addEventListener('click', (e) => {
+  e.preventDefault();
+  const title = document.getElementById('input-title').value.trim();
+  const artist = document.getElementById('input-artist').value.trim();
+  if(!title){ return; }
+  window.open(buildGeniusUrl(artist, title), '_blank');
+});
+
+document.getElementById('link-search').addEventListener('click', (e) => {
+  e.preventDefault();
+  const title = document.getElementById('input-title').value.trim();
+  const artist = document.getElementById('input-artist').value.trim();
+  const q = encodeURIComponent(`${artist} ${title} lyrics`.trim());
+  window.open(`https://www.google.com/search?q=${q}`, '_blank');
+});
+
+const DIACRITICS_MAP = {
+  'ă':'a','â':'a','î':'i','ș':'s','ş':'s','ț':'t','ţ':'t',
+  'Ă':'a','Â':'a','Î':'i','Ș':'s','Ş':'s','Ț':'t','Ţ':'t'
+};
+function cleanLyrics(raw){
+  const lines = raw.split('\n');
+  const kept = [];
+  let skipMode = false;
+  const isPureLink = (l) => /^\[[^\]]+\]\(https?:\/\/[^\)]+\)$/.test(l.trim());
+  const isBracketHeader = (l) => /^\[[^\]]+\]$/.test(l.trim());
+  const isRecommendMarker = (l) => /^you might also like$/i.test(l.trim());
+
+  for(const line of lines){
+    if(isRecommendMarker(line)){ skipMode = true; continue; }
+    if(skipMode){
+      if(isPureLink(line)) continue;
+      skipMode = false;
+    }
+    if(isBracketHeader(line)) continue;
+    kept.push(line);
+  }
+  return kept
+    .join('\n')
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^\)]+\)/g, '$1');
+}
+
+function normalizeText(str){
+  const mapped = str.split('').map(ch => DIACRITICS_MAP[ch] || ch).join('').toLowerCase();
+  return mapped
+    .replace(/-/g, ' ')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n')
+    .trim();
+}
+
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const title = document.getElementById('input-title').value.trim();
+  const artist = document.getElementById('input-artist').value.trim();
+  const spotify = document.getElementById('input-spotify').value.trim();
+  const lyrics = normalizeText(cleanLyrics(document.getElementById('input-lyrics').value.trim()));
+  if(!title || !lyrics) return;
+  if(editingId){
+    const existing = songs.find(s => s.id === editingId);
+    existing.title = title;
+    existing.artist = artist;
+    existing.spotify = spotify;
+    existing.lyrics = lyrics;
+  } else {
+    songs.push({ id: Date.now().toString(), title, artist, spotify, lyrics, history: [] });
+  }
+  editingId = null;
+  await saveSongs();
+  renderLibrary();
+  showScreen('library');
+});
+
+// ---- TYPING ----
+const typeBox = document.getElementById('type-box');
+const hiddenInput = document.getElementById('hidden-input');
+const bars = document.getElementById('bars');
+
+function toSpotifyEmbedUrl(url){
+  const match = url.match(/open\.spotify\.com\/(?:intl-\w+\/)?track\/([a-zA-Z0-9]+)/);
+  return match ? `https://open.spotify.com/embed/track/${match[1]}` : null;
+}
+
+function startTyping(song){
+  currentSong = song;
+  target = song.lyrics.trim().replace(/\s+/g, ' ');
+  finished = false;
+  startTime = null;
+  totalKeystrokes = 0;
+  errorKeystrokes = 0;
+  hiddenInput.value = '';
+  document.getElementById('type-song-title').textContent = song.title;
+  document.getElementById('type-song-artist').textContent = song.artist ? '— ' + song.artist : '';
+  document.getElementById('live-wpm').textContent = '0 wpm';
+  document.getElementById('live-acc').textContent = '100% acc';
+  document.getElementById('live-time').textContent = '0s';
+  document.getElementById('results-history').style.display = 'none';
+  const embedBox = document.getElementById('spotify-embed');
+  const embedUrl = song.spotify ? toSpotifyEmbedUrl(song.spotify) : null;
+  const loginHint = document.getElementById('spotify-login-hint');
+  if(embedUrl){
+    embedBox.innerHTML = `<iframe src="${embedUrl}" width="100%" height="80" frameborder="0" allow="autoplay; encrypted-media" style="border-radius:10px;"></iframe>`;
+    embedBox.style.display = 'block';
+    loginHint.style.display = 'block';
+  } else {
+    embedBox.innerHTML = '';
+    embedBox.style.display = 'none';
+    loginHint.style.display = 'none';
+  }
+  renderTypeBox('');
+  showScreen('type');
+  clearInterval(timerInterval);
+  timerInterval = setInterval(updateLiveStats, 250);
+  setTimeout(() => hiddenInput.focus(), 50);
+}
+
+document.getElementById('logo-home').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  bars.classList.remove('active');
+  showScreen('library');
+});
+
+document.getElementById('type-viewport').addEventListener('click', () => hiddenInput.focus());
+
+function renderTypeBox(typed){
+  const tokens = target.match(/\S+\s*/g) || [];
+  let html = '';
+  let idx = 0;
+  tokens.forEach(token => {
+    html += '<span class="word">';
+    for(const ch of token){
+      let cls = 'char';
+      if(idx < typed.length){
+        cls += typed[idx] === target[idx] ? ' correct' : ' incorrect';
+      } else if(idx === typed.length){
+        cls += ' current';
+      }
+      const display = ch === ' ' ? '&nbsp;' : escapeHtml(ch);
+      html += `<span class="${cls}">${display}</span>`;
+      idx++;
+    }
+    html += '</span>';
+  });
+  typeBox.innerHTML = html;
+  scrollToCursor();
+}
+
+function scrollToCursor(){
+  const current = typeBox.querySelector('.char.current') || typeBox.querySelector('.char:last-child');
+  if(!current) return;
+  const lineHeight = 64;
+  const offsetTop = current.offsetTop;
+  const lineIndex = Math.round(offsetTop / lineHeight);
+  const shift = Math.max(0, lineIndex - 1) * lineHeight;
+  typeBox.style.transform = `translateY(-${shift}px)`;
+}
+
+let audioCtx = null;
+function playErrorSound(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 200;
+    gain.gain.value = 0.06;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+  }catch(e){}
+}
+
+hiddenInput.addEventListener('input', () => {
+  if(finished) return;
+  const val = hiddenInput.value;
+  if(val.length > target.length){
+    hiddenInput.value = val.slice(0, target.length);
+    return;
+  }
+  if(startTime === null && val.length > 0){
+    startTime = Date.now();
+    bars.classList.add('active');
+  }
+  // track keystrokes/errors only on growth (not backspace)
+  if(val.length > (renderTypeBox._lastLen || 0)){
+    const idx = val.length - 1;
+    totalKeystrokes++;
+    if(val[idx] !== target[idx]){
+      errorKeystrokes++;
+      playErrorSound();
+    }
+  }
+  renderTypeBox._lastLen = val.length;
+  renderTypeBox(val);
+
+  if(val.length === target.length){
+    finishTyping();
+  }
+});
+
+function updateLiveStats(){
+  if(!startTime || finished) return;
+  const elapsedSec = (Date.now() - startTime) / 1000;
+  const typedLen = hiddenInput.value.length;
+  const wpm = Math.round((typedLen / 5) / (elapsedSec / 60)) || 0;
+  const acc = totalKeystrokes ? Math.round(((totalKeystrokes - errorKeystrokes) / totalKeystrokes) * 100) : 100;
+  document.getElementById('live-wpm').textContent = wpm + ' wpm';
+  document.getElementById('live-acc').textContent = acc + '% acc';
+  document.getElementById('live-time').textContent = Math.round(elapsedSec) + 's';
+}
+
+function renderSparkline(values){
+  if(values.length < 2){
+    return `<div style="font-size:12px; color:var(--text-dim);">${values.length} attempt${values.length === 1 ? '' : 's'} saved</div>`;
+  }
+  const w = 220, h = 44, pad = 6;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max - min) || 1;
+  const points = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - 2 * pad);
+    const y = h - pad - ((v - min) / range) * (h - 2 * pad);
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><polyline points="${points}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+async function finishTyping(){
+  finished = true;
+  clearInterval(timerInterval);
+  bars.classList.remove('active');
+  const elapsedSec = Math.max((Date.now() - startTime) / 1000, 0.1);
+  const minutes = elapsedSec / 60;
+  const correctChars = Math.max(totalKeystrokes - errorKeystrokes, 0);
+  const rawWpm = Math.round((totalKeystrokes / 5) / minutes);
+  const correctWpm = Math.round((correctChars / 5) / minutes);
+  const acc = totalKeystrokes ? Math.round((correctChars / totalKeystrokes) * 100) : 100;
+  document.getElementById('res-wpm').textContent = correctWpm;
+  document.getElementById('res-raw').textContent = rawWpm;
+  document.getElementById('res-acc').textContent = acc + '%';
+  document.getElementById('res-time').textContent = Math.round(elapsedSec) + 's';
+
+  if(currentSong){
+    if(!currentSong.history) currentSong.history = [];
+    currentSong.history.push({ wpm: correctWpm, acc, date: Date.now() });
+    if(currentSong.history.length > 20) currentSong.history = currentSong.history.slice(-20);
+    await saveSongs();
+    document.getElementById('sparkline').innerHTML = renderSparkline(currentSong.history.map(h => h.wpm));
+    document.getElementById('results-history').style.display = 'flex';
+  }
+  showScreen('results');
+}
+
+document.getElementById('btn-restart').addEventListener('click', () => startTyping(currentSong));
+document.getElementById('btn-retry').addEventListener('click', () => startTyping(currentSong));
+document.getElementById('btn-back').addEventListener('click', () => { clearInterval(timerInterval); bars.classList.remove('active'); showScreen('library'); });
+document.getElementById('btn-results-back').addEventListener('click', () => showScreen('library'));
+
+loadSongs();
+</script>
+</body>
+</html>
